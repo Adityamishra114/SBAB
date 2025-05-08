@@ -1,0 +1,26 @@
+{
+  "name": "sba",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development nodemon server.js",
+    "start": "cross-env NODE_ENV=production node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "fast-two-sms": "^3.0.0",
+    "mongoose": "^8.14.1",
+    "nodemon": "^3.1.10",
+    "stripe": "^18.1.0",
+    "twilio": "^5.6.0"
+  }
+}
