@@ -5,43 +5,47 @@ import Order from "../models/Order.js";
 // Create Order
 export const createOrder = async (req, res) => {
   try {
-    const { items, address, payment } = req.body;
-    if (!address || !items || !Array.isArray(items) || items.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Address and items are required" });
+    const { items, address, userId } = req.body; 
+    if (!address || !items || !Array.isArray(items) || items.length === 0 || !userId) {
+      return res.status(400).json({ message: "Address, items, and userId are required" });
     }
-    const addressData = await Address.findById(address);
+
+    // Fetch full address object
+    const addressData = await Address.findById(address).lean();
     if (!addressData) {
       return res.status(400).json({ message: "Address not found or invalid" });
     }
-    const itemsData = await Seva.find({ _id: { $in: items } });
+
+    // Fetch full items array
+    const itemsData = await Seva.find({ _id: { $in: items } }).lean();
     if (itemsData.length !== items.length) {
       return res.status(400).json({ message: "One or more Sevas are invalid" });
     }
+
+    // Calculate total amount
     const amountToPay = itemsData.reduce(
-      (total, item) => total + item.price,
+      (total, item) =>
+        total +
+        (typeof item.discountedPrice === "number"
+          ? item.discountedPrice
+          : item.marketPrice),
       0
     );
 
+    // Save full address and items inside order, and include userId
     const orderDoc = new Order({
-      items,
-      address,
-      payment: payment || undefined,
+      userId, // <-- add userId here
+      items: itemsData,
+      address: addressData,
       amount: amountToPay,
     });
     await orderDoc.save();
 
-    // Populate all details for the response
-    const populatedOrder = await Order.findById(orderDoc._id)
-      .populate("items")
-      .populate("address")
-      .populate("payment");
-
     res.status(201).json({
       orderId: orderDoc._id,
+      paymentId: null,
       amountToPay,
-      order: populatedOrder, // <-- all details inside order object
+      order: orderDoc,
     });
   } catch (error) {
     console.error("Order creation error:", error);
@@ -63,5 +67,18 @@ export const getOrderDetails = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// In your backend routes/controller
+export const getUserOrders = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const orders = await Order.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(3);
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch orders" });
   }
 };

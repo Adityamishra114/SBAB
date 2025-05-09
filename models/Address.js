@@ -25,7 +25,7 @@ const addressSchema = new mongoose.Schema({
     required: true,
   },
   type: {
-    type: Number,
+    type: String, 
     required: false,
   },
   verified: {
